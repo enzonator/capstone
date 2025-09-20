@@ -1,35 +1,21 @@
 <?php
-// Auth first (defines isAdmin(), requireAdmin(), starts session)
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
 
-// DB
 require_once __DIR__ . '/../config/db.php';
 
-// Optional search
 $q = trim($_GET['q'] ?? '');
-
-// Sorting
 $sort = $_GET['sort'] ?? 'recent';
+
 switch ($sort) {
-    case 'id':
-        $orderBy = "p.id ASC";
-        break;
-    case 'price_asc':
-        $orderBy = "p.price ASC";
-        break;
-    case 'price_desc':
-        $orderBy = "p.price DESC";
-        break;
-    case 'recent':
-    default:
-        $orderBy = "p.created_at DESC";
-        break;
+    case 'id': $orderBy = "p.id ASC"; break;
+    case 'price_asc': $orderBy = "p.price ASC"; break;
+    case 'price_desc': $orderBy = "p.price DESC"; break;
+    default: $orderBy = "p.created_at DESC"; break;
 }
 
-// Build query
 if ($q !== '') {
-    $like = '%' . $q . '%';
+    $like = "%$q%";
     $sql = "SELECT p.id, p.name, p.type, p.breed, p.price, p.created_at, u.username
             FROM pets p
             JOIN users u ON u.id = p.user_id
@@ -47,88 +33,163 @@ if ($q !== '') {
     $pets = $conn->query($sql);
 }
 
-// Use admin header if you created it, otherwise fall back to the normal header
-$adminHeader = __DIR__ . '/../includes/admin_header.php';
-if (file_exists($adminHeader)) {
-    include $adminHeader;
-} else {
-    include __DIR__ . '/../includes/header.php';
-}
+include __DIR__ . "/../includes/admin-sidebar.php";
 ?>
 
-<div class="container mt-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="m-0">🐾 Manage Pets</h2>
+<div class="products-page">
+  <div class="content-wrapper">
+    <h2>🐾 Manage Pets</h2>
 
-    <form class="d-flex" method="get" action="">
-      <input class="form-control me-2" type="search" name="q" placeholder="Search pets, breed, type, seller…" value="<?= htmlspecialchars($q) ?>">
-      <button class="btn btn-primary" type="submit">Search</button>
-    </form>
-  </div>
+    <!-- Search & Sort -->
+    <div class="actions-bar">
+      <form method="get" class="search-form">
+        <input type="text" name="q" placeholder="Search pets, breed, type, seller…" value="<?= htmlspecialchars($q) ?>">
+        <button type="submit">Search</button>
+      </form>
+      <form method="get" class="sort-form">
+        <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+        <label>Sort by:</label>
+        <select name="sort" onchange="this.form.submit()">
+          <option value="recent" <?= $sort==='recent'?'selected':'' ?>>Most Recent</option>
+          <option value="id" <?= $sort==='id'?'selected':'' ?>>ID</option>
+          <option value="price_asc" <?= $sort==='price_asc'?'selected':'' ?>>Price: Low → High</option>
+          <option value="price_desc" <?= $sort==='price_desc'?'selected':'' ?>>Price: High → Low</option>
+        </select>
+      </form>
+    </div>
 
-  <!-- Sorting Dropdown -->
-  <div class="d-flex justify-content-end mb-3">
-    <form method="get" class="d-flex">
-      <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
-      <label class="me-2 align-self-center">Sort by:</label>
-      <select name="sort" class="form-select me-2" onchange="this.form.submit()">
-        <option value="recent" <?= $sort === 'recent' ? 'selected' : '' ?>>Most Recent</option>
-        <option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>ID</option>
-        <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Price: Low → High</option>
-        <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Price: High → Low</option>
-      </select>
-      <noscript><button type="submit" class="btn btn-primary">Sort</button></noscript>
-    </form>
-  </div>
-
-  <div class="table-responsive shadow-sm rounded">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Breed</th>
-          <th>Seller</th>
-          <th>Price (₱)</th>
-          <th>Created</th>
-          <th style="width: 120px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
+    <!-- Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Breed</th>
+            <th>Seller</th>
+            <th>Price (₱)</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
         <?php if ($pets && $pets->num_rows > 0): ?>
           <?php while ($row = $pets->fetch_assoc()): ?>
             <tr>
-              <td><?= (int)$row['id'] ?></td>
-              <td><?= htmlspecialchars($row['name']) ?></td>
-              <td><?= htmlspecialchars(ucfirst($row['type'])) ?></td>
+              <td><?= $row['id'] ?></td>
+              <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+              <td><?= htmlspecialchars($row['type']) ?></td>
               <td><?= htmlspecialchars($row['breed']) ?></td>
               <td><?= htmlspecialchars($row['username']) ?></td>
-              <td><?= number_format((float)$row['price'], 2) ?></td>
-              <td><?= htmlspecialchars($row['created_at']) ?></td>
+              <td><span class="badge">₱<?= number_format($row['price'],2) ?></span></td>
+              <td><?= $row['created_at'] ?></td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  <a class="btn btn-outline-secondary" href="/catshop/public/pet-details.php?id=<?= (int)$row['id'] ?>">View</a>
-                  <a class="btn btn-outline-primary disabled" href="#" tabindex="-1" aria-disabled="true">Edit</a>
-                  <a class="btn btn-outline-danger" href="/catshop/admin/delete-pet.php?id=<?= (int)$row['id'] ?>" 
-                    onclick="return confirm('Are you sure you want to delete this pet?');">Delete</a>
+                <div class="actions">
+                  <a href="/catshop/public/pet-details.php?id=<?= $row['id'] ?>" class="btn view">View</a>
+                  <a href="#" class="btn edit disabled">Edit</a>
+                  <a href="/catshop/admin/delete-pet.php?id=<?= $row['id'] ?>" class="btn delete"
+                     onclick="return confirm('Delete this pet?');">Delete</a>
                 </div>
               </td>
-
             </tr>
           <?php endwhile; ?>
         <?php else: ?>
-          <tr><td colspan="8" class="text-center text-muted py-4">No pets found.</td></tr>
+          <tr><td colspan="8" class="empty">No pets found.</td></tr>
         <?php endif; ?>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="mt-3">
-    <a class="btn btn-link" href="/catshop/admin/index.php">← Back to Admin Dashboard</a>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<?php
-$adminHeader ? null : include __DIR__ . '/../includes/footer.php';
-?>
+<style>
+.products-page {
+  margin-left: 220px;
+  padding: 20px;
+  background: #f4f6f9;
+  min-height: 100vh;
+  width: calc(100% - 220px);
+  box-sizing: border-box;
+}
+.products-page .content-wrapper {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+.products-page h2 {
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #333;
+}
+.actions-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+.search-form input, .sort-form select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.search-form button {
+  padding: 6px 14px;
+  margin-left: 5px;
+  border: none;
+  border-radius: 6px;
+  background: #28a745;
+  color: #fff;
+  cursor: pointer;
+}
+.search-form button:hover {
+  background: #218838;
+}
+.table-container {
+  overflow-x: auto;
+}
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-container thead {
+  background: #343a40;
+  color: #fff;
+}
+.table-container th, .table-container td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+.table-container tbody tr:hover {
+  background: #f9f9f9;
+}
+.badge {
+  background: #28a745;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+}
+.actions {
+  display: flex;
+  gap: 5px;
+}
+.btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  text-decoration: none;
+  color: #fff;
+}
+.btn.view { background: #17a2b8; }
+.btn.view:hover { background: #138496; }
+.btn.edit { background: #6c757d; cursor: not-allowed; }
+.btn.delete { background: #dc3545; }
+.btn.delete:hover { background: #c82333; }
+.empty {
+  text-align: center;
+  color: #777;
+  padding: 20px;
+}
+</style>

@@ -2,23 +2,7 @@
 session_start();
 include '../config/db.php';
 
-$sql = "
-    SELECT p.id, p.name, p.breed, p.age, p.price, pi.file_path AS image
-    FROM pets p
-    LEFT JOIN pet_images pi ON pi.id = (
-        SELECT MIN(id) 
-        FROM pet_images 
-        WHERE pet_id = p.id
-    )
-    ORDER BY p.created_at DESC
-    LIMIT 4
-";
-
-$result = $conn->query($sql);
-
-
 include_once "../includes/header.php"; // ✅ Use your normal header
-
 ?>
 
 <!-- Hero Section -->
@@ -41,21 +25,35 @@ include_once "../includes/header.php"; // ✅ Use your normal header
 
         <div class="pet-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:20px;">
             <?php
-            // ✅ Fetch pets with seller info
-            $result = $conn->query("SELECT pets.*, users.username 
-                                    FROM pets 
-                                    JOIN users ON pets.user_id = users.id 
-                                    ORDER BY created_at DESC LIMIT 8");
+            // ✅ Fetch pets with seller info + first image from pet_images or fallback to pets.image
+            $result = $conn->query("
+                SELECT p.id, p.name, p.breed, p.age, p.price, u.username,
+                       COALESCE(
+                           (
+                               SELECT pi.filename 
+                               FROM pet_images pi 
+                               WHERE pi.pet_id = p.id 
+                               ORDER BY pi.id ASC 
+                               LIMIT 1
+                           ),
+                           p.image
+                       ) AS image
+                FROM pets p
+                LEFT JOIN users u ON p.user_id = u.id
+                ORDER BY p.id DESC
+                LIMIT 8
+            ");
 
             if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()):
+                    $image = $row['image'] ?: 'no-image.png'; // ✅ fallback
             ?>
             <div class="pet-card" style="background:#fff; border:1px solid #eee; border-radius:10px; padding:15px; text-align:center;">
-                <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" 
+                <img src="../uploads/<?php echo htmlspecialchars($image); ?>" 
                      alt="<?php echo htmlspecialchars($row['name']); ?>"
                      style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
                 <h3 style="font-size:18px; margin:10px 0 5px;"><?php echo htmlspecialchars($row['name']); ?></h3>
-                <p style="font-size:14px; color:#555;">Seller: <?php echo htmlspecialchars($row['username']); ?></p>
+                <p style="font-size:14px; color:#555;">Seller: <?php echo htmlspecialchars($row['username'] ?? 'Unknown'); ?></p>
                 <p style="font-size:16px; font-weight:bold; color:#e67e22; margin-top:5px;">
                     ₱<?php echo number_format($row['price'], 2); ?>
                 </p>
