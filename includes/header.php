@@ -70,7 +70,7 @@ $currentPage = basename($_SERVER['PHP_SELF']); // detect current page
 
       <!-- Right side links -->
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link <?= $currentPage == 'cart.php' ? 'active' : '' ?>" href="cart.php">Cart 🛒</a></li>
+        <li class="nav-item"><a class="nav-link <?= $currentPage == 'wishlisted-pets.php' ? 'active' : '' ?>" href="wishlisted-pets.php">My Wishlist ❤️</a></li>
 
         <?php if (isset($_SESSION['user_id'])): ?>
           <!-- Dropdown for logged-in user -->

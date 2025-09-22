@@ -10,7 +10,7 @@ if (!isset($_GET['id'])) {
 $pet_id = intval($_GET['id']);
 
 // Fetch pet info
-$sql = "SELECT p.*, u.username 
+$sql = "SELECT p.*, u.username, u.id as user_id 
         FROM pets p
         JOIN users u ON p.user_id = u.id
         WHERE p.id = ?";
@@ -114,6 +114,30 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     font-size: 16px;
 }
 
+/* Map */
+#map {
+    width: 100%;
+    height: 400px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+/* Inquire Button */
+.inquire-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 18px;
+    background: #28a745;
+    color: white;
+    font-size: 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+.inquire-btn:hover {
+    background: #218838;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .details-container {
@@ -144,7 +168,6 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 }
 </style>
-
 
 <div class="details-container">
     <!-- Left: Gallery -->
@@ -180,6 +203,18 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <p><strong>Price:</strong> ₱<?= number_format($pet['price'], 2); ?></p>
         <p><strong>Description:</strong><br><?= nl2br(htmlspecialchars($pet['description'])); ?></p>
         <p><strong>Listed by:</strong> <?= htmlspecialchars($pet['username']); ?></p>
+
+        <!-- Inquire Seller Button -->
+        <a href="message-seller.php?pet_id=<?= $pet['id']; ?>&seller_id=<?= $pet['user_id']; ?>" 
+           class="inquire-btn">📩 Inquire Seller</a>
+
+        <!-- Pet Location -->
+        <h3>Pet Location</h3>
+        <?php if (!empty($pet['latitude']) && !empty($pet['longitude'])): ?>
+            <div id="map"></div>
+        <?php else: ?>
+            <p><em>No location submitted.</em></p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -216,5 +251,34 @@ function updateImage() {
     thumbs[currentIndex].classList.add("active");
 }
 </script>
+
+<?php if (!empty($pet['latitude']) && !empty($pet['longitude'])): ?>
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<!-- Fullscreen Plugin -->
+<script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css"/>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let lat = <?= $pet['latitude'] ?>;
+    let lon = <?= $pet['longitude'] ?>;
+
+    let map = L.map("map", {
+        fullscreenControl: true // enable fullscreen button
+    }).setView([lat, lon], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+    }).addTo(map);
+
+    L.marker([lat, lon]).addTo(map)
+        .bindPopup("<?= htmlspecialchars($pet['name']); ?>'s Location")
+        .openPopup();
+});
+</script>
+<?php endif; ?>
 
 <?php include_once "../includes/footer.php"; ?>

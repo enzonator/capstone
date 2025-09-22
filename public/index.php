@@ -41,7 +41,7 @@ include_once "../includes/header.php"; // ✅ Use your normal header
                 FROM pets p
                 LEFT JOIN users u ON p.user_id = u.id
                 ORDER BY p.id DESC
-                LIMIT 8
+                LIMIT 10
             ");
 
             if ($result && $result->num_rows > 0) {

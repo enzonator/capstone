@@ -219,7 +219,12 @@ $(document).ready(function() {
 
     // Function to update form + info box
     function updateLocation(lat, lon) {
-        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, {
+            headers: {
+                'User-Agent': 'MyLeafletApp/1.0 (your-email@example.com)',
+                'Accept-Language': 'en'
+            }
+        })
         .then(response => response.json())
         .then(data => {
             let address = data.display_name || "Unknown location";
@@ -231,6 +236,11 @@ $(document).ready(function() {
             $("#loc-address").text(address);
             $("#loc-coords").text(`Lat: ${lat.toFixed(5)}, Lng: ${lon.toFixed(5)}`);
             $("#location-info").show();
+        })
+        .catch(err => {
+            console.error("Geocoding error:", err);
+            $("#address").val("Could not get address");
+            $("#loc-address").text("Could not get address");
         });
     }
 
