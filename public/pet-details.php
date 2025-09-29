@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once "../config/db.php";
 include_once "../includes/header.php";
 
@@ -30,6 +31,9 @@ $imgStmt = $conn->prepare($imgSql);
 $imgStmt->bind_param("i", $pet_id);
 $imgStmt->execute();
 $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// Current logged-in user
+$current_user_id = $_SESSION['user_id'] ?? null;
 ?>
 
 <style>
@@ -122,7 +126,7 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     margin-top: 10px;
 }
 
-/* Inquire Button */
+/* Buttons */
 .inquire-btn {
     display: inline-block;
     margin-top: 15px;
@@ -136,6 +140,21 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 .inquire-btn:hover {
     background: #218838;
+}
+
+.edit-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 18px;
+    background: #007bff;
+    color: white;
+    font-size: 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+.edit-btn:hover {
+    background: #0069d9;
 }
 
 /* Responsive Design */
@@ -204,9 +223,13 @@ $images = $imgStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <p><strong>Description:</strong><br><?= nl2br(htmlspecialchars($pet['description'])); ?></p>
         <p><strong>Listed by:</strong> <?= htmlspecialchars($pet['username']); ?></p>
 
-        <!-- Inquire Seller Button -->
-        <a href="message-seller.php?pet_id=<?= $pet['id']; ?>&seller_id=<?= $pet['user_id']; ?>" 
-           class="inquire-btn">📩 Inquire Seller</a>
+        <!-- Conditional Button -->
+        <?php if ($current_user_id && $current_user_id == $pet['user_id']): ?>
+            <a href="edit-pet.php?id=<?= $pet['id']; ?>" class="edit-btn">✏️ Edit Pet You Listed</a>
+        <?php else: ?>
+            <a href="message-seller.php?pet_id=<?= $pet['id']; ?>&seller_id=<?= $pet['user_id']; ?>" 
+               class="inquire-btn">📩 Inquire Seller</a>
+        <?php endif; ?>
 
         <!-- Pet Location -->
         <h3>Pet Location</h3>

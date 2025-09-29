@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Fetch user data
-$sql = "SELECT username, email FROM users WHERE id = ?";
+$sql = "SELECT username, email, first_name, last_name FROM users WHERE id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("SQL error: " . $conn->error);
@@ -24,17 +24,21 @@ $user = $stmt->get_result()->fetch_assoc();
 // Handle profile update
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = $_POST['email'] ?? '';
+    $first_name = $_POST['first_name'] ?? '';
+    $last_name  = $_POST['last_name'] ?? '';
 
-    $updateSql = "UPDATE users SET email = ? WHERE id = ?";
+    $updateSql = "UPDATE users SET email = ?, first_name = ?, last_name = ? WHERE id = ?";
     $updateStmt = $conn->prepare($updateSql);
     if (!$updateStmt) {
         die("SQL error: " . $conn->error);
     }
-    $updateStmt->bind_param("si", $email, $user_id);
+    $updateStmt->bind_param("sssi", $email, $first_name, $last_name, $user_id);
 
     if ($updateStmt->execute()) {
         $success = "Profile updated successfully!";
-        $user['email'] = $email; // update in current session
+        $user['email'] = $email;
+        $user['first_name'] = $first_name;
+        $user['last_name'] = $last_name;
     } else {
         $error = "Failed to update profile.";
     }
@@ -113,6 +117,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <form method="POST">
                 <label>Username</label>
                 <input type="text" value="<?= htmlspecialchars($user['username']); ?>" disabled>
+
+                <label>First Name</label>
+                <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']); ?>">
+
+                <label>Last Name</label>
+                <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']); ?>">
 
                 <label>Email</label>
                 <input type="email" name="email" value="<?= htmlspecialchars($user['email']); ?>">

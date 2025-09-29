@@ -45,7 +45,7 @@ $currentPage = basename($_SERVER['PHP_SELF']); // detect current page
     <!-- Logo -->
     <a class="navbar-brand d-flex align-items-center" href="index.php">
       <img src="../assets/images/logo.png" alt="CatShop Logo"> 
-      <span class="fw-bold">CatShop</span>
+      
     </a>
 
     <!-- Mobile toggle -->

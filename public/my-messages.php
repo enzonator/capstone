@@ -23,7 +23,12 @@ $sql = "
         u.username AS other_username,
         MAX(m.created_at) AS last_message_time,
         SUBSTRING_INDEX(MAX(CONCAT(m.created_at, '|', m.message)), '|', -1) AS last_message,
-        SUM(CASE WHEN m.receiver_id = ? AND m.is_read = 0 THEN 1 ELSE 0 END) AS unread_count
+        SUM(
+            CASE 
+                WHEN m.receiver_id = ? AND m.is_read = 0 THEN 1 
+                ELSE 0 
+            END
+        ) AS unread_count
     FROM messages m
     JOIN pets p ON m.pet_id = p.id
     JOIN users u ON u.id = 
@@ -145,8 +150,8 @@ $conversations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                         </div>
                         <div class="time">
                             <?= $c['last_message_time']; ?>
-                            <?php if ($c['unread_count'] > 0): ?>
-                                <span class="unread-badge"><?= $c['unread_count']; ?></span>
+                            <?php if ((int)$c['unread_count'] > 0): ?>
+                                <span class="unread-badge"><?= (int)$c['unread_count']; ?></span>
                             <?php endif; ?>
                         </div>
                     </a>
