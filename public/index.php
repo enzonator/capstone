@@ -1,9 +1,27 @@
 <?php
 session_start();
 include '../config/db.php';
-
 include_once "../includes/header.php"; // ✅ Use your normal header
+
+// ✅ Check verification status (assuming you have $_SESSION['user_id'])
+$showVerificationPopup = false;
+if (isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+    $query = $conn->prepare("SELECT verified FROM users WHERE id = ?");
+    $query->bind_param("i", $user_id);
+    $query->execute();
+    $result = $query->get_result();
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        if ($user['verified'] == 0) {
+            $showVerificationPopup = true;
+        }
+    }
+}
 ?>
+
+<!-- ✅ SweetAlert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Hero Section -->
 <section class="hero" style="padding:60px 20px; text-align:center; background:#fffaf2;">
@@ -73,3 +91,23 @@ include_once "../includes/header.php"; // ✅ Use your normal header
 </section>
 
 <?php include_once "../includes/footer.php"; ?>
+
+<!-- ✅ Popup for unverified users -->
+<?php if ($showVerificationPopup): ?>
+<script>
+Swal.fire({
+    title: 'Account Not Verified',
+    text: 'Please verify your account to access all features of CatShop.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Verify Now',
+    cancelButtonText: 'Not Now',
+    confirmButtonColor: '#e67e22',
+    cancelButtonColor: '#555',
+}).then((result) => {
+    if (result.isConfirmed) {
+        window.location.href = 'verify.php'; // ✅ Change this to your verification page
+    }
+});
+</script>
+<?php endif; ?>

@@ -4,6 +4,7 @@
   <a href="products.php">Manage Pets</a>
   <a href="orders.php">View Orders</a>
   <a href="users.php">Manage Users</a>
+  <a href="verify-requests.php">Verify Requests</a>
   <a href="reports.php">Reports</a>
   <a href="charts.php">Charts</a>
 
@@ -32,10 +33,12 @@
     padding: 12px 20px;
     text-decoration: none;
     color: white;
+    transition: background 0.2s;
   }
   .sidebar a:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+
   .content {
     margin-left: 220px;
     padding: 20px;
